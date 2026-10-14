@@ -168,7 +168,8 @@ export class CarPhysics {
 }
 
 // ---------- 3D-Modell ----------
-export function createCarModel(color = '#1f6fff', ghost = false) {
+export function createCarModel(color = '#1f6fff', { ghost = false, shadow = true } = {}) {
+  const castShadow = shadow && !ghost;
   const group = new THREE.Group();
   const matOpts = ghost ? { transparent: true, opacity: 0.35, depthWrite: false } : {};
   const paint = new THREE.MeshStandardMaterial({ color, metalness: 0.4, roughness: 0.35, ...matOpts });
@@ -180,7 +181,7 @@ export function createCarModel(color = '#1f6fff', ghost = false) {
   const add = (geo, mat, x, y, z) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
-    m.castShadow = !ghost;
+    m.castShadow = castShadow;
     group.add(m);
     return m;
   };
@@ -208,7 +209,7 @@ export function createCarModel(color = '#1f6fff', ghost = false) {
     pivot.position.set(x, 0.45, z);
     const spin = new THREE.Group();
     const tire = new THREE.Mesh(wheelGeo, dark);
-    tire.castShadow = !ghost;
+    tire.castShadow = castShadow;
     spin.add(tire, new THREE.Mesh(rimGeo, rimMat));
     pivot.add(spin);
     group.add(pivot);

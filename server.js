@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { attachMultiplayer } from './multiplayer.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 10000;
@@ -161,6 +162,8 @@ const server = http.createServer(async (req, res) => {
   const rel = pathname === '/' ? 'index.html' : pathname.slice(1);
   return serveFile(res, PUBLIC_DIR, rel);
 });
+
+attachMultiplayer(server, TRACK_IDS);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`TrackRush läuft auf Port ${PORT}`);

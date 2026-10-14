@@ -16,6 +16,8 @@
   <div id="hud" class="hidden">
     <div id="timer">0:00.000</div>
     <div id="cp">CP 0/0</div>
+    <div id="online" class="hidden"></div>
+    <div id="feed"></div>
     <div id="split" class="hidden"></div>
     <div id="countdown" class="hidden"></div>
     <div id="toast" class="hidden"></div>
@@ -27,8 +29,11 @@
 
   <div id="menu" class="overlay">
     <div class="panel menu-panel">
-      <h1>TRACK<span>RUSH</span></h1>
-      <p class="sub">Arcade-Zeitrennen · Fahre so schnell wie möglich durch alle Checkpoints ins Ziel</p>
+      <div class="title-row">
+        <h1>TRACK<span>RUSH</span></h1>
+        <div id="netStatus"><span class="dot"></span>Verbinde …</div>
+      </div>
+      <p class="sub">Arcade-Zeitrennen · Fahre so schnell wie möglich durch alle Checkpoints ins Ziel · Wer die gleiche Strecke fährt, sieht sich live</p>
       <label class="name">Dein Name
         <input id="nameInput" maxlength="16" placeholder="Fahrer" autocomplete="off" />
       </label>

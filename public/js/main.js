@@ -5,6 +5,8 @@ import { buildTrackMeshes, buildScenery } from './trackMesh.js';
 import { CarPhysics, createCarModel, orientModel } from './car.js';
 import { GameAudio } from './audio.js';
 import { computeMedals } from './medals.js';
+import { Net } from './net.js';
+import { RemotePlayers } from './remote.js';
 
 const $ = (id) => document.getElementById(id);
 const DT = 1 / 120; // feste Physikrate
@@ -83,7 +85,7 @@ const game = {
   gates: [],
   car: null,
   model: createCarModel('#1f6fff'),
-  ghostModel: createCarModel('#ffffff', true),
+  ghostModel: createCarModel('#ffffff', { ghost: true }),
   steps: 0,
   countdown: 0,
   lastCount: 0,
@@ -99,6 +101,63 @@ const game = {
 };
 scene.add(game.model, game.ghostModel);
 game.ghostModel.visible = false;
+
+// ---------- Multiplayer ----------
+const remote = new RemotePlayers(scene);
+let onlineCounts = {};
+let lastStateSent = 0;
+const net = new Net({
+  status(ok) {
+    $('netStatus').innerHTML = ok
+      ? '<span class="dot on"></span>Online'
+      : '<span class="dot"></span>Verbinde …';
+    if (!ok) remote.clear();
+  },
+  roster(m) {
+    remote.setRoster(m.players, net.id);
+    updateOnlineHud();
+  },
+  snap(m) {
+    remote.snapshot(m.ps, net.id);
+  },
+  counts(m) {
+    onlineCounts = m.c || {};
+    updateMenuCounts();
+  },
+  event(m) {
+    if (game.state === 'menu') return;
+    const name = escapeHtml(m.name);
+    if (m.kind === 'join') feed(`${name} ist beigetreten`);
+    else if (m.kind === 'leave') feed(`${name} hat verlassen`);
+    else if (m.kind === 'finish') feed(`🏁 ${name} · ${fmt(m.time)}`);
+  },
+  full() {
+    feed('Raum ist voll');
+  },
+});
+
+function updateOnlineHud() {
+  const n = remote.count;
+  $('online').textContent = n ? `👥 ${n + 1} auf der Strecke` : '';
+  $('online').classList.toggle('hidden', !n);
+}
+
+function updateMenuCounts() {
+  document.querySelectorAll('.track-card').forEach((el) => {
+    const n = onlineCounts[el.dataset.id] || 0;
+    const mine = net.track === el.dataset.id ? 1 : 0;
+    const others = n - mine;
+    el.querySelector('.online').textContent = others > 0 ? `● ${others} online` : '';
+  });
+}
+
+function feed(html) {
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  $('feed').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+  while ($('feed').children.length > 5) $('feed').firstChild.remove();
+}
 
 const visUp = new THREE.Vector3(0, 1, 0);
 const camFwd = new THREE.Vector3(0, 0, 1);
@@ -123,6 +182,8 @@ function loadTrack(def) {
     disposeGroup(game.world);
   }
   game.def = def;
+  remote.clear();
+  net.join(def.id, getName());
   game.track = new Track(def);
   const { group, gates } = buildTrackMeshes(game.track);
   const { group: scenery, sky } = buildScenery(game.track, def.id.length * 7 + 3);
@@ -202,6 +263,7 @@ function passCheckpoint() {
 function finishRun() {
   const time = Math.round(game.steps * DT * 1000);
   game.finishTime = time;
+  net.finish(time);
   game.splits.push(time);
   game.state = 'finished';
   audio.beep(784, 0.15);
@@ -255,6 +317,7 @@ function toMenu() {
   $('touch').classList.add('hidden');
   $('menu').classList.remove('hidden');
   game.ghostModel.visible = false;
+  net.idle();
   renderMenu();
 }
 
@@ -442,6 +505,11 @@ function drawMinimap() {
     g.fillStyle = 'rgba(255,255,255,0.8)';
     g.beginPath(); g.arc(gx, gy, 3.5, 0, Math.PI * 2); g.fill();
   }
+  for (const r of remote.visiblePositions()) {
+    const [rx, ry] = mini.map(r.pos.x, r.pos.z);
+    g.fillStyle = r.color;
+    g.beginPath(); g.arc(rx, ry, 4, 0, Math.PI * 2); g.fill();
+  }
   const [cx, cy] = mini.map(game.car.pos.x, game.car.pos.z);
   g.fillStyle = '#ffd400';
   g.strokeStyle = '#000';
@@ -454,7 +522,12 @@ function getName() {
   return $('nameInput').value.trim().slice(0, 16);
 }
 $('nameInput').value = store.get('trackrush.name') || '';
-$('nameInput').addEventListener('input', () => store.set('trackrush.name', getName()));
+let nameTimer = null;
+$('nameInput').addEventListener('input', () => {
+  store.set('trackrush.name', getName());
+  clearTimeout(nameTimer);
+  nameTimer = setTimeout(() => net.setName(getName()), 500);
+});
 
 let selectedId = store.get('trackrush.track') || TRACKS[0].id;
 
@@ -467,11 +540,13 @@ function renderMenu() {
     const won = pb && MEDALS.find((m) => pb.time <= medals[m.key]);
     const card = document.createElement('button');
     card.className = 'track-card' + (def.id === selectedId ? ' selected' : '');
+    card.dataset.id = def.id;
     card.innerHTML = `
       <div class="diff" style="color:${def.color}">${def.difficulty}</div>
       <div class="tname">${escapeHtml(def.name)}</div>
       <div class="pb">PB ${fmt(pb && pb.time)} ${won ? `<span style="color:${won.color}">●</span>` : ''}</div>
-      <span class="play">Fahren ▶</span>`;
+      <span class="play">Fahren ▶</span>
+      <span class="online"></span>`;
     card.addEventListener('click', (e) => {
       const wasSelected = selectedId === def.id;
       selectTrack(def.id);
@@ -480,6 +555,7 @@ function renderMenu() {
     list.appendChild(card);
   }
   selectTrack(selectedId, false);
+  updateMenuCounts();
 }
 
 function selectTrack(id, rerender = true) {
@@ -644,6 +720,11 @@ function frame(now) {
       if (w.front) w.pivot.rotation.y = -car.steer * 0.45;
     }
     updateGhost();
+    remote.update(dt, game.state === 'menu' ? null : car.pos);
+    if (game.state !== 'menu' && now - lastStateSent > 50) {
+      lastStateSent = now;
+      net.sendState(car.pos, game.model.quaternion, car.speed);
+    }
     updateCamera(dt);
 
     // Licht folgt dem Auto, damit die Schatten scharf bleiben
