@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>TrackRush</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>" />
+  <link rel="stylesheet" href="/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="hud" class="hidden">
+    <div id="timer">0:00.000</div>
+    <div id="cp">CP 0/0</div>
+    <div id="split" class="hidden"></div>
+    <div id="countdown" class="hidden"></div>
+    <div id="toast" class="hidden"></div>
+    <div id="medalsHud"></div>
+    <canvas id="minimap" width="180" height="180"></canvas>
+    <div id="speedo"><span id="speed">0</span><small>km/h</small></div>
+    <div id="keys">Enter: Checkpoint · R: Neustart · C: Kamera · G: Ghost · M: Ton · Esc: Menü</div>
+  </div>
+
+  <div id="menu" class="overlay">
+    <div class="panel menu-panel">
+      <h1>TRACK<span>RUSH</span></h1>
+      <p class="sub">Arcade-Zeitrennen · Fahre so schnell wie möglich durch alle Checkpoints ins Ziel</p>
+      <label class="name">Dein Name
+        <input id="nameInput" maxlength="16" placeholder="Fahrer" autocomplete="off" />
+      </label>
+      <div id="trackList"></div>
+      <div class="cols">
+        <div class="col">
+          <h3>Bestenliste <span id="boardTrack"></span></h3>
+          <ol id="board"><li class="muted">Lädt …</li></ol>
+        </div>
+        <div class="col">
+          <h3>Steuerung</h3>
+          <table class="controls">
+            <tr><td>W / ↑</td><td>Gas</td></tr>
+            <tr><td>S / ↓</td><td>Bremse / Rückwärts</td></tr>
+            <tr><td>A D / ← →</td><td>Lenken</td></tr>
+            <tr><td>Leertaste</td><td>Drift</td></tr>
+            <tr><td>Enter / Backspace</td><td>Zum letzten Checkpoint</td></tr>
+            <tr><td>R / Entf</td><td>Neustart</td></tr>
+            <tr><td>C · G · M</td><td>Kamera · Ghost · Ton</td></tr>
+          </table>
+          <p class="muted small">Gamepad wird ebenfalls unterstützt.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="finish" class="overlay hidden">
+    <div class="panel finish-panel">
+      <div class="finish-label">ZIEL</div>
+      <div id="finishTime">0:00.000</div>
+      <div id="finishInfo"></div>
+      <div id="finishMedal"></div>
+      <h3>Bestenliste</h3>
+      <ol id="finishBoard"></ol>
+      <div class="buttons">
+        <button id="btnRetry" class="primary">Nochmal (R)</button>
+        <button id="btnMenu">Menü (Esc)</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="touch" class="hidden">
+    <div class="tleft">
+      <button data-k="left">◀</button>
+      <button data-k="right">▶</button>
+    </div>
+    <div class="tright">
+      <button data-k="respawn" class="small">↺</button>
+      <button data-k="drift" class="small">D</button>
+      <button data-k="brake">▼</button>
+      <button data-k="gas" class="gas">▲</button>
+    </div>
+  </div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "trackrush",
+  "version": "1.0.0",
+  "description": "Arcade-Rennspiel im Trackmania-Stil (Three.js) mit Bestenliste",
+  "main": "server.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "three": "0.160.0"
+  }
+}
